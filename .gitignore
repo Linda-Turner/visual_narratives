@@ -9,3 +9,6 @@ src/plot_communities/
 src/old_code/
 src/viz_graph_exp/
 src/clustering/clustering_tests.py
+.venv
+/output_narratives/*
+/data/*

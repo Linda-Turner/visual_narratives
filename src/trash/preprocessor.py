@@ -12,7 +12,6 @@ import spacy
 from spacy.cli import download as spacy_download
 from tqdm import tqdm
 
-
 class Preprocessor:
     """
     A class to preprocess a given corpus (e.g., split it into sentences, clean)
@@ -42,23 +41,56 @@ class Preprocessor:
         lowercase: bool = True,
         lemmatize: bool = True,
         remove_chars: list = remove_chars,
-        n_process: int = -1,
-        batch_size: int = 1000,
+        n_process: int = 1,
+        # batch_size: int = 1000,
+        coref_batch_size: int = 64,
+        sentencizer_batch_size: int = 1000,
     ):
         if not spacy.util.is_package(spacy_model):
             spacy_download(spacy_model)
 
         self.spacy_model = spacy_model
-        self.nlp = spacy.load(spacy_model)
-        self.nlp.add_pipe("sentencizer")
+        self.coref_nlp = spacy.load(spacy_model)
+        self.sentencizer_nlp = spacy.load(spacy_model)
+        self.sentencizer_nlp.add_pipe("sentencizer", first=True)
         self.n_process = n_process
-        self.batch_size = batch_size
+        self.coref_batch_size = coref_batch_size
+        self.sentencizer_batch_size = sentencizer_batch_size
         self.remove_punctuation = remove_punctuation
         self.remove_digits = remove_digits
         self.stop_words = stop_words
         self.lowercase = lowercase
         self.lemmatize = lemmatize
         self.remove_chars = remove_chars
+
+    def resolve_coreferences(self, df: pd.DataFrame
+    ) -> pd.DataFrame:
+        """
+        Batch process multiple texts for primitive pronoun resolution using spaCy's pipe.
+        
+        Args:
+            df: Pandas DataFrame with a column "Labels" containing the texts to process.
+            
+        Returns:
+            Pandas DataFrame with the coreference-resolved texts updated in the "Labels" column.
+        """
+        print(f"\n{'='*60}")
+        print("Coreference resolution...")
+        
+        spacy_docs = self.coref_nlp.pipe(df["Labels"], batch_size=self.coref_batch_size, n_process=self.n_process)
+        new_texts = []
+        for doc in tqdm(spacy_docs, total=len(df)):
+            spans = [doc[tok.left_edge.i: tok.right_edge.i+1] for tok in doc if tok.dep_=="nsubj"]
+            text = doc.text
+            for span in spans:
+                if span.text.lower() in ("they", "it", "she", "he"):
+                    text = text.replace(span.text, spans[0].text)
+            new_texts.append(text)
+        # Check if the number of resolved texts matches the original DataFrame length
+        if len(new_texts) != len(df):
+            raise RuntimeError("Coreference resolution produced an unexpected number of texts.")
+        df["Labels"] = new_texts
+        return df
 
     def split_into_sentences(
         self,
@@ -67,11 +99,11 @@ class Preprocessor:
     ) -> pd.DataFrame:
         
         """
-        Split a list of documents into sentences (using the SpaCy sentence splitter).
+        Batch process multiple texts for splitting sentences using spaCy's sentence splitter.
 
         Args:
-            dataframe: a pandas dataframe with a column "ImageID" and a column "Labels"
-            output_path: path to save the pandas DataFrame in a .csv format (default is None).
+            dataframe: a Pandas DataFrame with a column "ImageID" and a column "Labels"
+            output_path: path to save the Pandas DataFrame in a .csv format (default is None).
             NB: output_path is worth specifying for large datasets, since in this case, the result
             is written to a file row by row and then read back into a DataFrame.
 
@@ -79,33 +111,39 @@ class Preprocessor:
             Pandas DataFrame with all the columns which were in the input dataframe
 
         """
-        length = len(df)
-
-        spacy_docs = self.nlp.pipe(
+        spacy_docs = self.sentencizer_nlp.pipe(
             df["Labels"],
             disable=["tagger", "ner", "parser", "lemmatizer"],
-            batch_size=self.batch_size,
+            batch_size=self.sentencizer_batch_size,
             n_process=self.n_process,
         )
 
+        print(f"\n{'='*60}")
         print("Splitting into sentences...")
         time.sleep(1)
-        spacy_docs = tqdm(spacy_docs, total=length)
 
         if output_path is None:
             raise NotImplementedError("For large datasets, please specify output_path")
 
-        with open(output_path, "w", newline="") as csvfile:
+        with open(output_path, "w", encoding="utf-8",newline="") as csvfile:
             fieldnames = list(df.columns)
             fieldnames.append('sentence')
             writer = csv.writer(csvfile)
             writer.writerow(fieldnames)
-            for i, doc in enumerate(spacy_docs):
-                curr_row = df.iloc[i].tolist()
+            # for i, doc in enumerate(tqdm(spacy_docs, total=len(df))):
+            #     curr_row = df.iloc[i].tolist()
+            #     for sent in doc.sents:
+            #         sentence = str(sent)
+            #         writer.writerow([*curr_row, sentence])
+            for row, doc in tqdm(zip(df.itertuples(index=False), spacy_docs), total=len(df)):
+                curr_row = list(row)
                 for sent in doc.sents:
                     sentence = str(sent)
-                    writer.writerow([*curr_row, sentence])
+                    # filter out two-symbol sentences
+                    if len(sentence) > 2:
+                        writer.writerow([*curr_row, sentence])
 
-        df = pd.read_csv(output_path)
+        sentence_df = pd.read_csv(output_path)
+        sentence_df = sentence_df.drop(columns=['Labels'])
 
-        return df
+        return sentence_df

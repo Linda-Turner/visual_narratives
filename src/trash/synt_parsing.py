@@ -1,6 +1,11 @@
+import re
+import csv
+
+import pandas as pd
 import benepar
 import spacy
 from nltk import Tree
+from tqdm import tqdm
 
 benepar.download('benepar_en3')
 
@@ -67,20 +72,43 @@ def clean_parsed(parsed: list[tuple]) -> tuple[list, list]:
     
     return parsed_labels, parsed_sentence
 
-
-def parse_sentence(sentence: str) -> tuple[list, list]:
+def parse_sentence(
+        df: pd.DataFrame,
+        output_path: str = None,
+    ):# -> tuple[list, list]:
     '''
     Parse the sentence into its syntactic components using Benepar.
     Returns:
         parsed_labels: list of syntactic labels
         parsed_sentence: list of corresponding sentence pieces
     '''
-    doc = nlp(sentence)
-    sents = list(doc.sents)
-    if not sents:
-        return [], []
+    if output_path is None:
+        raise NotImplementedError("For large datasets, please specify output_path")
+    # write to csv in order not to overload the memory
+    with open(output_path, 'w',encoding="utf-8", newline='') as csvfile:
+        fieldnames = ['sentence_id', 'parsed_labels', 'parsed_sentence'] + df.columns.tolist()
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+        writer.writeheader()
+        tqdm.write("Parsing sentences...")
+        # for idx, row in df_sentences.iterrows():
+        for idx, row in tqdm(df.iterrows(),total=len(df)):
+            sentence = row['sentence']
+            sentence = re.sub(r"\s+", " ", sentence).strip()
+            doc = nlp(sentence)
+            sents = list(doc.sents)
+            if not sents:
+                return [], []
 
-    tree = Tree.fromstring(sents[0]._.parse_string)
-    parsed = traverse_tree(tree, [])
-    parsed_labels, parsed_sentence = clean_parsed(parsed)
-    return parsed_labels, parsed_sentence
+            tree = Tree.fromstring(sents[0]._.parse_string)
+            parsed = traverse_tree(tree, [])
+            labels, sentence = clean_parsed(parsed)
+            # labels, sentence = parse_sentence(row['sentence'])
+            row_data = row.to_dict()
+            writer.writerow({
+                'sentence_id': idx,
+                'parsed_labels': labels,
+                'parsed_sentence': sentence,
+                **row_data,
+            })
+
+    #return parsed_labels, parsed_sentence

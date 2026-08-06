@@ -10,7 +10,7 @@ from tqdm import tqdm
 import numpy as np
 from numpy.linalg import norm
 from sentence_transformers import SentenceTransformer
-
+from typing import Iterable
 
 class Embeddings():
     """
@@ -42,9 +42,12 @@ class Embeddings():
     def get_vector(self, phrase: str) -> np.ndarray:
         """
         Generate an embedding vector for a single phrase.
-                    
+        
+        Args:
+            phrase (str): Text phrase to convert into an embedding vector.
+
         Returns:
-            np.ndarray: The embedding vector. Returns NaN array if encoding fails.
+            np.ndarray: The embedding vector for the input phrase. Returns NaN array if encoding fails.
         """
         res = self._get_default_vector(phrase)
 
@@ -65,24 +68,33 @@ class Embeddings():
     def _get_default_vector(self, phrase: str) -> np.ndarray:
         """
         Encode a phrase using the underlying SentenceTransformer model.
-            
+
+        Args:
+            phrase (str): Text phrase to encode.
+
         Returns:
-            np.ndarray: The raw embedding vector from the model.
+            np.ndarray: Raw embedding vector produced by the SentenceTransformer.
         """
         return self._model.encode(phrase)
 
-    def get_vectors(self, phrases, progress_bar: bool = True) -> np.ndarray:
+    def get_vectors(self, phrases: Iterable[str], progress_bar: bool = True) -> np.ndarray:
         """
         Generate embedding vectors for multiple phrases.
-            
+
+        Args:
+            phrases (Iterable[str]): Collection of text phrases to convert into
+                embedding vectors.
+            progress_bar (bool): Whether to display a tqdm progress bar while
+                generating embeddings.
+                Defaults to True.
+
         Returns:
-            np.ndarray: Array of embedding vectors with shape (n_phrases, embedding_dim).
+            np.ndarray: Array of embedding vectors with shape (number_of_phrases, embedding_dimension).
         """
         phrases_list = list(phrases)
         
         if progress_bar:
-            print("Computing phrase embeddings...")
-            phrases_list = tqdm(phrases_list)
+            phrases_list = tqdm(phrases_list, desc="Embedding phrases")
 
         vectors_list = []
         for phrase in phrases_list:
