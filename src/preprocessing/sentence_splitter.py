@@ -11,14 +11,18 @@ import spacy
 from spacy.cli import download as spacy_download
 from tqdm import tqdm
 
+from .orchestrator import SPACY_MODEL
+
 class SentenceSplitter:
     """
     A class to split text descriptions into sentences using spaCy.
 
     Args:
-        spacy_model (str): One of the available spacy models for the English language (default: en_core_web_sm). For a complete list, see: https://spacy.io/models/en
-        n_process (int): Number of processes to user in nlp.pipe() for parallel computing (default: 1). Set to -1 to use all cores on the machine.
-        batch_size (int): Size of the batches for parallel computing (default: 1000 -- the SpaCy default).
+        spacy_model (str): One of the available spacy models for the English language Default to en_core_web_sm. 
+            For a complete list, see: https://spacy.io/models/en
+        n_process (int): Number of processes to user in nlp.pipe() for parallel computing Default to 1. 
+            Set to -1 to use all cores on the machine.
+        batch_size (int): Size of the batches for parallel computing Default to 1000.
 
     Note:
         Uses spaCy's rule-based sentencizer, which splits sentences without requiring dependency parsing.
@@ -26,7 +30,7 @@ class SentenceSplitter:
 
     def __init__(
         self,
-        spacy_model="en_core_web_sm",
+        spacy_model=SPACY_MODEL,
         n_process: int = 1,
         batch_size: int = 1000,
     ):
@@ -42,14 +46,14 @@ class SentenceSplitter:
     def split_into_sentences(
         self,
         df: pd.DataFrame,
-        output_path: str = None,
+        output_path: str,
     ) -> None:
         """
         Split sentences in the 'Labels' column of a DataFrame and save the result to a CSV file.
 
         Args:
             df (pd.DataFrame): a Pandas DataFrame with the column "Labels" containing the text descriptions to split into sentences.
-            output_path (str): path to save the split sentences in a .csv format (default is None).
+            output_path (str): path to save the split sentences in a .csv format.
                 Note: The result is written to a file row by row.
         """
         spacy_docs = self.nlp.pipe(

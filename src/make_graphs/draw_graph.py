@@ -53,15 +53,15 @@ DEFAULT_EDGE_WIDTH = MIN_EDGE_WIDTH
 
 
 def draw_graph(
-    networkx_graph,
-    output_filename,
-    notebook=True,
-    width='1000px',
-    height='1000px',
-    show_buttons=False,
-    only_physics_buttons=False,
-    toggle_physics=True
-):
+        networkx_graph : nx.Graph,
+        output_filename : str,
+        notebook : bool = True,
+        width : str ='1000px',
+        height : str ='1000px',
+        show_buttons : bool =False,
+        only_physics_buttons : bool =False,
+        toggle_physics : bool =True
+    ):
     """
     This function accepts a networkx graph object,
     converts it to a pyvis network object preserving its node and edge attributes,
@@ -70,14 +70,17 @@ def draw_graph(
     (For more info: https://pyvis.readthedocs.io/en/latest/documentation.html#pyvis.network.Network.add_node)
 
     Args:
-        networkx_graph: The graph to convert and display
-        output_filename: Where to save the converted network
-        notebook: Display in Jupyter?
-        width: width of the network
-        height: height of the network
-        show_buttons: Show buttons in saved version of network?
-        only_physics_buttons: Show only buttons controlling physics of network?
-        toggle_physics: Enable/disable physics simulation
+        networkx_graph (nx.Graph): The graph to convert and display.
+        output_filename (str): Where to save the converted network.
+        notebook (bool): Display in Jupyter?
+        width (str): width of the network.
+        height (str): height of the network.
+        show_buttons (bool): Show buttons in saved version of network?
+        only_physics_buttons (bool): Show only buttons controlling physics of network?
+        toggle_physics (bool): Enable/disable physics simulation.
+    
+    Returns:
+        A dynamic network visualization
     """
     if not networkx_graph.nodes():
         raise ValueError("Graph has no nodes")
@@ -207,5 +210,5 @@ def draw_graph(
             pyvis_graph.show_buttons()
 
     pyvis_graph.toggle_physics(toggle_physics)
-
+    print('Graph is drawn and saved to:', output_filename)
     return pyvis_graph.show(output_filename)

@@ -6,6 +6,9 @@ from preprocessing.coref_resolution import resolve_coreferences
 from preprocessing.sentence_splitter import SentenceSplitter
 from preprocessing.sentence_parser import SentenceParser
 
+SPACY_MODEL = 'en_core_web_sm'
+BENEPAR_MODEL = "benepar_en3"
+
 def filter_descriptions(df : pd.DataFrame) -> pd.DataFrame:
     """
     Filter out invalid descriptions from the DataFrame. (i.e. where the model failed to provide a description)
@@ -37,11 +40,11 @@ def preprocess_sentences(
         coref_batch_size: int=64, 
         splitter_batch_size: int=1000, 
         parser_batch_size: int=1000, 
-        spacy_model: str="en_core_web_sm", 
-        benepar_model: str="benepar_en3"
-        ) -> None:
+        spacy_model: str=SPACY_MODEL, 
+        benepar_model: str= BENEPAR_MODEL
+    ) -> None:
     '''
-    A wrapper function to preprocess the sentences from the file in the input path and save the processed sentences to the output directory.
+    Preprocess the sentences from the file in the input path and save the processed sentences to the output directory.
     The preprocessing steps include:
         1. Filter out invalid descriptions (i.e. where the model failed to provide one)
         2. Resolve coreferences
@@ -51,14 +54,14 @@ def preprocess_sentences(
     Args: 
         input_path (str): .tsv file with a 'Labels' column with text descriptions. 
         output_dir (str): directory to save the processed sentences.
-        n_process (int): Number of processes to user in nlp.pipe() for parallel computing (default: 1). 
+        n_process (int): Number of processes to user in nlp.pipe() for parallel computing Defaults to 1. 
             Set to -1 to use all cores on the machine.
-        coref_batch_size (int): Size of the batches for coreference resolution (default: 64).
-        splitter_batch_size (int): Size of the batches for sentence splitting (default: 1000).
-        parser_batch_size (int): Size of the batches for sentence parsing (default: 1000).
-        spacy_model (str): spaCy model to use for dependency parsing and sentence splitting (default: "en_core_web_sm"). 
+        coref_batch_size (int): Size of the batches for coreference resolution Default to 64.
+        splitter_batch_size (int): Size of the batches for sentence splitting Default to 1000.
+        parser_batch_size (int): Size of the batches for sentence parsing Default to 1000.
+        spacy_model (str): spaCy model to use for dependency parsing and sentence splitting Default to "en_core_web_sm". 
             For a complete list, see: https://spacy.io/models/en
-        benepar_model (str): Benepar parsing model (default: "benepar_en3").
+        benepar_model (str): Benepar parsing model Default to "benepar_en3".
 
     Returns:
         str: a path to the preprocessed parsed sentences CSV file.

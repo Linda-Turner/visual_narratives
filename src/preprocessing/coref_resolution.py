@@ -3,21 +3,22 @@ from tqdm import tqdm
 import pandas as pd
 
 from spacy.cli import download as spacy_download
+from .orchestrator import SPACY_MODEL
 
 def resolve_coreferences(
         df: pd.DataFrame, 
         n_process: int = 1, 
         batch_size: int = 64, 
-        spacy_model: str = "en_core_web_sm"
-        ) -> pd.DataFrame:
+        spacy_model: str = SPACY_MODEL
+    ) -> pd.DataFrame:
     """
     Replace simple subject pronouns with the first subject in each description.
 
     Args:
         df (pd.DataFrame): DataFrame containing a 'Labels' column with text descriptions.
-        n_process (int): Number of processes to user in nlp.pipe() for parallel computing (default: 1). Set to -1 to use all cores on the machine.
-        batch_size (int): Size of the batches for parallel computing (default: 1000 -- the SpaCy default).
-        spacy_model (str): spaCy model to use for dependency parsing and sentence splitting (default: "en_core_web_sm"). 
+        n_process (int): Number of processes to user in nlp.pipe() for parallel computing Defaults to 1. Set to -1 to use all cores on the machine.
+        batch_size (int): Size of the batches for parallel computing Defaults to 1000.
+        spacy_model (str): spaCy model to use for dependency parsing and sentence splitting Defaults to "en_core_web_sm". 
             For a complete list, see: https://spacy.io/models/en
 
     Returns:

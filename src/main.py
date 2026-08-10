@@ -5,13 +5,12 @@ import pandas as pd
 
 from preprocessing.orchestrator import preprocess_sentences
 from clustering.orchestrator import (
-    cluster_verb_noun_phrases,
+    cluster_verb_and_noun_phrases,
     update_sentences_with_clusterized)
-from make_graphs.utils import split_df_create_graphs, draw_graph
+from make_graphs.build_graph import create_and_save_multiple_graphs
+from make_graphs.draw_graph import draw_graph
 
-PCA_ARGS = {'n_components': 50, 'svd_solver': 'full'}
-
-def build_visual_narratives(input_file: str, output_dir: str, pca_args: dict=PCA_ARGS):
+def build_visual_narratives(input_file: str, output_dir: str):
     '''
     The complete visual narrative generation pipeline from step 2 descriptions, 
     including preprocessing, syntactic parsing, phrase clustering, and graph construction.
@@ -42,29 +41,31 @@ def build_visual_narratives(input_file: str, output_dir: str, pca_args: dict=PCA
     clustering_output_dir = os.path.join(output_dir, "clustering")
     if not os.path.exists(clustering_output_dir):
         os.makedirs(clustering_output_dir)
-    cluster_verb_noun_phrases(preprocessed_df, clustering_output_dir, pca_args, 50)
+    cluster_verb_and_noun_phrases(preprocessed_df, clustering_output_dir)
 
     # Update sentences and merg with data 
-    preprocessed_df['path'] = preprocessed_df['Dir'].astype(str) + "/" + preprocessed_df['ImageID'].astype(str)
     updated_roles_df = update_sentences_with_clusterized(preprocessed_df, clustering_output_dir)
-    data = pd.read_csv(f'data/data.tsv', sep='\t')
-    merged_df = updated_roles_df.merge(data, on="path", how="inner")
+    updated_roles_df['path'] = updated_roles_df['Dir'].astype(str) + "/" + updated_roles_df['ImageID'].astype(str)
+    original_data = pd.read_csv(f'data/data.tsv', sep='\t')
+    merged_df = updated_roles_df.merge(original_data, on="path", how="inner")
     merged_df.to_csv(os.path.join(data_output_dir, 'updated_data.csv'), index=False)
 
-    # Draw grapgh
-    name2graph = split_df_create_graphs(merged_df, output_dir)
+    # Create grapgh
+    graphs_output_dir = os.path.join(output_dir, "graphs")
+    if not os.path.exists(graphs_output_dir):
+        os.makedirs(graphs_output_dir)
+    name2graph = create_and_save_multiple_graphs(merged_df, graphs_output_dir,['cop', 'strike'],['m', 'c'])
+
+    # Draw graph
     for name, graph in name2graph.items():
         if name.endswith('_c'):
             draw_graph(
                 graph,
-                output_filename=os.path.join(output_dir, f'{name}_graph.html')
+                output_filename=os.path.join(graphs_output_dir, f'{name}_graph.html')
             )
-            print('Graph is drawn and saved to:', os.path.join(output_dir, f'{name}_graph.html'))
-
-        
 
 if __name__ == "__main__":
-    INPUT_FILE = 'data/data_test.tsv'  # input .tsv file with columns: 'Dir', 'ImageID', 'Labels'
+    INPUT_FILE = 'data/prompt_with_text_step2.tsv'  # input .tsv file with columns: 'Dir', 'ImageID', 'Labels'
     OUTPUT_DIR = 'output_narratives'  # directory to save the narratives
 
     build_visual_narratives(INPUT_FILE, OUTPUT_DIR)

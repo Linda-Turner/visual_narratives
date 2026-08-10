@@ -11,22 +11,24 @@ from tqdm import tqdm
 from .embeddings import Embeddings
 
 EMBEDDING_MODEL = Embeddings(normalize=True)          
+PCA_ARGS = {'n_components': 50, 'svd_solver': 'full'}
 
 def prepare_df_to_clustering(
         df: pd.DataFrame, 
         verb_dir: str, 
         noun_phrases_dir: str
-        ) -> tuple[str, str]:
+    ) -> tuple[str, str]:
     '''
-    Creates CSV files of verbs and noun phrases from the Pandas DataFrame and save the result to a CSV file.
+    Create CSV files of verbs and noun phrases from parsed sentences in Pandas DataFrame.
+    Save the result to a CSV file.
 
     Args:
-        df (pd.DataFrame): Pandas DataFrame containing syntaxically parsed sentences.
-        verb_dir (str): Directory path to save verb CSV file.
-        noun_phrases_dir (str): Directory path to save noun phrases CSV file.
+        df (pd.DataFrame): Pandas DataFrame containing columns 'parsed_labels', 'parsed_sentence' and 'sentence_id'.
+        verb_dir (str): Directory path to save verbs to a CSV file.
+        noun_phrases_dir (str): Directory path to save noun phrases to a CSV file.
 
     Returns:
-        tuple[str, str]: a tuple of paths to the created verbs and noun phrases CSV files.
+        tuple[str, str]: a tuple of paths to the created verbs and noun phrases to CSV files.
     '''
     print(f"\n{'='*60}")
     print('Preparing data for clustering...')
@@ -65,16 +67,18 @@ def prepare_df_to_clustering(
     
     return verbs_path, noun_phrases_path
 
-def clusters_and_write(
+def cluster_and_write(
         input_path: str, 
         output_dir: str, 
         batch_size: int = 15000, 
-        pca_args: dict = {'n_components': 50, 'svd_solver': 'full'}
-        ) -> None:
+        pca_args: dict = PCA_ARGS
+    ) -> None:
     """
-    Creates phrase clusters and save the result to a CSV file.
-    If the dataset is larger than batchsize, process phrases in batches to handle memory constraints.
-    Creates initial clusters within batches, then performs second-level clustering on batch labels.
+    Create phrase clusters and save the result to a CSV file.
+
+    Note:
+        Handle memory constraints, the phrases are processed in batches, if the dataset is larger than batchsize.
+        Initial clusters are created within batches, second-level clustering is performed on batch labels.
     
     Args:
         input_path (str): Path to input CSV file containing a 'word' column.
@@ -97,7 +101,7 @@ def clusters_and_write(
         with open(clusters_path, 'w', encoding='utf-8') as f:
             writer = csv.writer(f)
             writer.writerow(['label', 'phrases', 'size'])   
-            cluster_batch(phrases, phrase2count, writer, pca_args)
+            cluster_batch_and_write(phrases, phrase2count, writer, pca_args)
         return
     
     # Batch clustering
@@ -108,7 +112,7 @@ def clusters_and_write(
         for i in range(0, len(phrases), batch_size):
             batch = phrases[i:i+batch_size]
             tqdm.write(f'Processing batch {i//batch_size + 1} of {(len(phrases)-1)//batch_size + 1}')
-            cluster_batch(batch, phrase2count, writer, pca_args)
+            cluster_batch_and_write(batch, phrase2count, writer, pca_args)
 
     df = pd.read_csv(batch_clusters_path, converters={'phrases': ast.literal_eval})
     label2phrases = {row.label: row.phrases for row in df.itertuples(index=False)}
@@ -132,12 +136,12 @@ def clusters_and_write(
             writer.writerow([label, clustered_phrases, size])        
 
 
-def cluster_batch(
+def cluster_batch_and_write(
         phrases: list[str],
         phrase2count: dict[str, int],
         writer,
-        pca_args: dict,
-        ) -> None:
+        pca_args: dict = PCA_ARGS
+    ) -> None:
     """
     Cluster a list of phrases and write the resulting clusters to a CSV writer.
 
@@ -161,19 +165,19 @@ def cluster_batch(
         writer.writerow([cl_label, cl_phrases, cl_size])
  
 def embed_and_cluster(
-    phrases: list[str], 
-    pca_args: dict = {'n_components': 50, 'svd_solver': 'full'},
-    threshold: float = 0.7
+        phrases: list[str], 
+        pca_args: dict = PCA_ARGS,
+        threshold: float = 0.7
     ) -> list[list[int]]:
     '''
-    Generates embeddings for input phrases, applies PCA dimensionality reduction,
-    and performs agglomerative clustering based on cosine similarity with complete linkage 
+    Generate embeddings for input phrases, apply PCA dimensionality reduction,
+    and perform agglomerative clustering based on cosine similarity with complete linkage 
     to group semantically similar phrases together.
     
     Args:
         phrases (list[str]): List of text strings to embed and cluster.
-        pca_args (dict): Dictionary of parameters to pass to PCA initialization.
-            Defaults to {'n_components': 50, 'svd_solver': 'full'}.
+        pca_args (dict): Dictionary of PCA parameters. Defaults to 50 components
+            with 'full' SVD solver.
         threshold (float): Cosine similarity threshold for clustering (0-1).
             Higher values create tighter clusters. Defaults to 0.7.
     

@@ -5,23 +5,26 @@ import pandas as pd
 
 from .clusterize import (
     prepare_df_to_clustering,
-    clusters_and_write
+    cluster_and_write
+    
 )
+from .clusterize import PCA_ARGS
 
-def cluster_verb_noun_phrases(
-    df: pd.DataFrame, 
-    output_dir: str, 
-    pca_args: dict = {'n_components': 50, 'svd_solver': 'full'},
-    batch_size=15000
+def cluster_verb_and_noun_phrases(
+        df: pd.DataFrame, 
+        output_dir: str, 
+        pca_args: dict = PCA_ARGS,
+        batch_size=15000
     ) -> None:
     '''
-    A wrapper function to clusterize verbs and noun phrases from the Pandas DataFrame.
-    Clustering is performed separately for verbs and noun phrases.
-    The function saves the clustering results in the specified output directory.
+    Cluster verbs and noun phrases from parsed sentences in the Pandas DataFrame and save the result to seperate CSV files. 
+    
+    Note: 
+        Clustering is performed separately for verbs and noun phrases.
 
     Args:
-        df (pd.DataFrame): Pandas DataFrame containing syntaxically parsed sentences.
-        output_dir (str): Path to the folder containing the clustering results.
+        df (pd.DataFrame): Pandas DataFrame containing columns 'parsed_labels', 'parsed_sentence' and 'sentence_id'.
+        output_dir (str): Directory where the clustering results will be saved.
         pca_args (dict): Dictionary of PCA parameters. Defaults to 50 components with 'full' SVD solver.
         batch_size (int): Maximum number of phrases per batch for clustering. Defaults to 15000.
     '''
@@ -48,7 +51,7 @@ def cluster_verb_noun_phrases(
         print(f"\n{'='*60}")
         print(f"Clustering {name.lower()}...")
 
-        clusters_and_write(
+        cluster_and_write(
             path,
             cluster_dirs[name.lower()],
             pca_args=pca_args,
@@ -60,23 +63,22 @@ def cluster_verb_noun_phrases(
 def update_sentences_with_clusterized(
         df: pd.DataFrame, 
         output_dir: str
-        ) -> pd.DataFrame:
+    ) -> pd.DataFrame:
     '''
-    Reads a DataFrame CSV containing phrase-to-label mappings and replaces
-    matching phrases in the 'parsed_sentence' column with their cluster labels.
+    Replace matching phrases in the 'parsed_sentence' column with their cluster labels.
     
     Args:
-        df (pd.DataFrame): DataFrame with original phrases
-        output_dir (str): Directory where cluster labels are stored
+        df (pd.DataFrame): DataFrame with column 'parsed_sentence', containing original parsed sentences.
+        output_dir (str): Directory where the cluster labels are stored.
     
     Returns:
         pd.DataFrame: a Pandas DataFrame with phrases replaced by cluster labels in 'parsed_sentence'.
     '''
-    meta = {"noun_phrases": 'Noun phrases', "verbs": 'Verbs'}
+    types = {"noun_phrases": 'Noun phrases', "verbs": 'Verbs'}
     print(f"\n{'='*60}")
-    for file_name, phrase_type in meta.items():
+    for phrase_folder_name, phrase_type in types.items():
         print(f"Updating {phrase_type} with clusterized labels...")
-        clusters_path = os.path.join(output_dir, file_name, 'clusters.csv')
+        clusters_path = os.path.join(output_dir, phrase_folder_name, 'clusters.csv')
         clusters_df = pd.read_csv(clusters_path, converters={'phrases': ast.literal_eval})
         phrase2label = {
             phr.lower(): tup.label 

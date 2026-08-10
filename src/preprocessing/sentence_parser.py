@@ -8,17 +8,19 @@ from nltk import Tree
 from tqdm import tqdm
 from spacy.cli import download as spacy_download
 
+from .orchestrator import SPACY_MODEL, BENEPAR_MODEL
+
 class SentenceParser:
     """
     A class to parse sentences into syntactic components using Benepar.
 
     Args:
-        spacy_model (str): spaCy model to use for dependency parsing and sentence splitting (default: "en_core_web_sm"). 
+        spacy_model (str): spaCy model to use for dependency parsing and sentence splitting Default to "en_core_web_sm". 
             For a complete list, see: https://spacy.io/models/en
-        benepar_model (str): Benepar parsing model (default: "benepar_en3").
-        n_process (int): Number of processes to user in nlp.pipe() for parallel computing (default: 1). 
+        benepar_model (str): Benepar parsing model Default to "benepar_en3".
+        n_process (int): Number of processes to user in nlp.pipe() for parallel computing Default to 1. 
             Set to -1 to use all cores on the machine.
-        batch_size (int): Size of the batches for parallel computing (default: 1000 -- the SpaCy default).
+        batch_size (int): Size of the batches for parallel computing Default to 1000.
 
     Note:
         Benepar adds a constituency parser to spaCy, producing syntactic trees that are converted into labeled sentence components.
@@ -26,8 +28,8 @@ class SentenceParser:
 
     def __init__(
         self,
-        spacy_model="en_core_web_sm",
-        benepar_model="benepar_en3",
+        spacy_model=SPACY_MODEL,
+        benepar_model=BENEPAR_MODEL,
         n_process: int = 1,
         batch_size: int = 1000,
     ):
@@ -55,7 +57,7 @@ class SentenceParser:
     def parse_sentences(
             self,
             df: pd.DataFrame,
-            output_path: str = None,
+            output_path: str,
         ) -> None:
         """
         Parse the sentences in the 'sentence' column of a Pandas DataFrame and save the result to a CSV file.
@@ -91,7 +93,7 @@ class SentenceParser:
     def parse_doc(
             self, 
             doc: spacy.tokens.Doc
-            ) -> tuple[list, list]:
+        ) -> tuple[list, list]:
         '''
         Wrapper function to parse the doc of the sentence into its syntactic components using Benepar.
 
@@ -114,7 +116,7 @@ class SentenceParser:
     def clean_parsed(
             self, 
             parsed: list[tuple]
-            ) -> tuple[list, list]:
+        ) -> tuple[list, list]:
         '''
         Clean the punctuation from the parsed list and lemmatize verbs.
         Keeps gerunds.
@@ -146,7 +148,7 @@ class SentenceParser:
 def traverse_tree(
         tree: Tree, 
         parsed: list
-        ) -> list:
+    ) -> list:
     '''
     Recursive function to traverse the syntactic tree and extract components.
     If the branch is a pure noun phrase, like "ice cover variations", it will be non chopped.
@@ -177,7 +179,7 @@ def traverse_tree(
 
 def _contains_nested(
         np_branch: Tree
-        ) -> bool:
+    ) -> bool:
     """
     Check if an NP contains nested structures:
         PP (prepositional clause) or SBAR (semantic dependent clause),
