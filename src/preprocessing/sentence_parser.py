@@ -8,7 +8,8 @@ from nltk import Tree
 from tqdm import tqdm
 from spacy.cli import download as spacy_download
 
-from .orchestrator import SPACY_MODEL, BENEPAR_MODEL
+from preprocessing.config import SPACY_MODEL, BENEPAR_MODEL
+
 
 class SentenceParser:
     """
@@ -195,6 +196,3 @@ def _contains_nested(
         if leaf.label() in ("PP", "SBAR", "S", "VP"):
             return True
     return False
-  
-
-

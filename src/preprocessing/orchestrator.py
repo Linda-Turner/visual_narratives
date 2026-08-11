@@ -5,9 +5,7 @@ import pandas as pd
 from preprocessing.coref_resolution import resolve_coreferences
 from preprocessing.sentence_splitter import SentenceSplitter
 from preprocessing.sentence_parser import SentenceParser
-
-SPACY_MODEL = 'en_core_web_sm'
-BENEPAR_MODEL = "benepar_en3"
+from preprocessing.config import SPACY_MODEL, BENEPAR_MODEL
 
 def filter_descriptions(df : pd.DataFrame) -> pd.DataFrame:
     """

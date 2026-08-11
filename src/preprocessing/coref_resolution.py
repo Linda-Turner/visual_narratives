@@ -3,7 +3,7 @@ from tqdm import tqdm
 import pandas as pd
 
 from spacy.cli import download as spacy_download
-from .orchestrator import SPACY_MODEL
+from preprocessing.config import SPACY_MODEL, BENEPAR_MODEL
 
 def resolve_coreferences(
         df: pd.DataFrame, 

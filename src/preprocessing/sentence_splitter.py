@@ -11,7 +11,7 @@ import spacy
 from spacy.cli import download as spacy_download
 from tqdm import tqdm
 
-from .orchestrator import SPACY_MODEL
+from preprocessing.config import SPACY_MODEL
 
 class SentenceSplitter:
     """

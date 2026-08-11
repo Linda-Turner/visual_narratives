@@ -65,7 +65,7 @@ def build_visual_narratives(input_file: str, output_dir: str):
             )
 
 if __name__ == "__main__":
-    INPUT_FILE = 'data/prompt_with_text_step2.tsv'  # input .tsv file with columns: 'Dir', 'ImageID', 'Labels'
+    INPUT_FILE = 'data/data_test.tsv'  # input .tsv file with columns: 'Dir', 'ImageID', 'Labels'
     OUTPUT_DIR = 'output_narratives'  # directory to save the narratives
 
     build_visual_narratives(INPUT_FILE, OUTPUT_DIR)
