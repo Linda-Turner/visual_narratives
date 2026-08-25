@@ -1,0 +1,276 @@
+import os, csv
+import pandas as pd
+from tqdm import tqdm
+
+from .config import PLACEHOLDER, PROMPT1, PROMPT2
+
+def two_step_descriptions(
+        input_df: pd.DataFrame,
+        model: str,
+        image_dir: str,
+        outfile_step1: str,
+        outfile_step2: str,
+        prompt_step1: str,
+        prompt_step2: str,
+        credentials, 
+        max_tokens: int = 2000,
+        limit: int = -1,
+        split: str = None
+    ):
+    """
+    Generate image descriptions in two sequential steps using a multimodal
+    language model.
+
+    Args:
+        model (str): Name of the model implementation to use. Currently only
+            "gemma" is supported.
+        image_dir (str): Root directory containing the images to process.
+        outfile_step1 (str): Path to the output file for the first description
+            step.
+        outfile_step2 (str): Path to the output file for the second description
+            step.
+        prompt1 (str): Prompt used for the first description step.
+        prompt2 (str): Prompt used for the second description step.
+        tokens (int, optional): Maximum number of tokens generated for each
+            image. Defaults to 2000.
+        limit (int, optional): Maximum number of images to process. A value of
+            -1 means that all images are processed. Defaults to -1.
+        split (str, optional): Optional split determining which images are
+            processed based on numeric filenames. "o" processes odd-numbered
+            files and "e" processes even-numbered files. Defaults to None.
+
+    Returns:
+        None
+    """
+    if not prompt_step1:
+        prompt_step1 = PROMPT1 
+    if not prompt_step2:
+        prompt_step2 = PROMPT2
+
+    print(f"\n{'='*60}")
+    print("Prompt generation started...")
+    if model == "gemma":
+        import generate_description.gemma as gemma
+        gemma_model, processor, device = gemma.load_gemma_model("google/gemma-4-E2B-it")
+    elif model == "gpt":
+        import generate_description.gpt as gpt
+        file = open(credentials, "r")
+        api_key = file.readline().strip()
+        cred = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {api_key}"
+        }
+    else:
+        raise ValueError(f"Unknown model: {model}. Available options include 'gemma' and 'gpt'.")
+    
+    processed_step1,processed_step1_2 = load_processed(outfile_step1,outfile_step2)
+    print("Already processed in step 1:",len(processed_step1))
+    print("Already processed in step 1 and 2:",len(processed_step1_2))
+
+    print("Generating step1 descriptions...")
+    process_step(model=model, input_df=input_df, image_dir=image_dir, outfile=outfile_step1, 
+                 processed=processed_step1, prompt=prompt_step1, step=1,
+                 credentials=credentials, processor=processor, gemma_model=gemma_model, device=device, 
+                 max_tokens=max_tokens, limit=limit, split=split)
+    descriptions_step1 = pd.read_csv(outfile_step1, sep='\t')
+    print("Generating step2 descriptions...")
+    process_step(model=model, input_df=input_df, image_dir=image_dir, outfile=outfile_step2, 
+                 processed=processed_step1_2, prompt=prompt_step2, step=2, descriptions_step1=descriptions_step1,
+                 credentials=credentials, processor=processor, gemma_model=gemma_model, device=device, 
+                 max_tokens=max_tokens, limit=limit, split=split)
+    print("Two-step description generation complete!")
+
+
+def load_processed(step1_outfile: str, step2_outfile: str):
+    """
+    Load the image paths that have already been processed in each description
+    generation step.
+
+    Args:
+        step1_outfile (str): Path to the output file from the first step.
+        step2_outfile (str): Path to the output file from the second step.
+
+    Returns:
+        tuple: A tuple containing two sets. The first set contains image paths
+            processed in step 1, and the second contains image paths processed
+            in both step 1 and step 2.
+    """
+    processed_step1 = set()
+    processed_step2 = set()
+    if os.path.exists(step1_outfile):
+        with open(step1_outfile, newline="", encoding="utf-8") as csvfile:
+            reader = csv.DictReader(csvfile,delimiter="\t")
+            for row in reader:
+                image_path = os.path.join(row["Dir"],row["ImageID"])
+                processed_step1.add(image_path)
+    if os.path.exists(step2_outfile):
+        with open(step2_outfile,newline="",encoding="utf-8") as csvfile:
+            reader = csv.DictReader(csvfile,delimiter="\t")
+            for row in reader:
+                image_path = os.path.join(row["Dir"],row["ImageID"])
+                if image_path in processed_step1:
+                    processed_step2.add(image_path)
+    return (processed_step1, processed_step2)
+
+
+def process_step(
+        model:str,
+        input_df:pd.DataFrame,
+        image_dir: str,
+        outfile: str,
+        processed: set,
+        prompt: str,
+        step: int,
+        descriptions_step1: pd.DataFrame = None,
+        credentials = None,
+        processor = None,
+        gemma_model = None,
+        device = None,
+        max_tokens: int = 2000,
+        limit: int = -1,
+        split: str = None,
+    ):
+    """
+    Process one description generation step over all images in a directory.
+    Images that have already been processed are skipped. 
+
+    Args:
+        image_dir (str): Root directory containing the images to process.
+        outfile (str): Path to the output file where generated descriptions
+            are stored.
+        processed (set): Set containing image paths that have already been
+            processed and should therefore be skipped.
+        prompt (str): Prompt used to generate the description.
+        step (int): Description generation step. Must be either 1 or 2.
+        descriptions_step1 (pd.DataFrame, optional): DataFrame containing the
+            descriptions generated during step 1. Required when processing
+            step 2. Defaults to None.
+        processor (optional): Model processor used to prepare inputs for the
+            GEMMA model. Defaults to None.
+        model (optional): Loaded GEMMA model used for generation. Defaults to
+            None.
+        device (optional): Device on which the model is running. Defaults to
+            None.
+        max_tokens (int, optional): Maximum number of tokens generated for
+            each image. Defaults to 2000.
+        limit (int, optional): Maximum number of images to process. A value of
+            -1 means that all images are processed. Defaults to -1.
+        split (str, optional): Optional split determining which images are
+            processed based on numeric filenames. "o" processes odd-numbered
+            files and "e" processes even-numbered files. Defaults to None.
+
+    Returns:
+        None
+    """
+    # Open output file
+    if os.path.exists(outfile):
+        outfile_handle = open(outfile,"a",newline="",encoding="utf-8")
+    else:
+        outfile_handle = open(outfile,"w",newline="",encoding="utf-8")
+        outfile_handle.write("Dir\tImageID\tLabels\n")
+    count = 0
+    for root, dirs, files in os.walk(image_dir):
+        for file in tqdm(files, desc=f"Processing {root}"):
+            # Limit of images to describe reached
+            if limit > -1 and count >= limit:
+                break
+            image_path = os.path.join(root, file)
+            # Find image in input_file
+            matching_rows = input_df[input_df["path"] == image_path]
+            if matching_rows.empty:
+                print(f"[WARNING] Image not found in input file: {image_path}", flush=True)
+                continue
+            placeholder = matching_rows["usr_type"].iloc[0]
+            tweet_text = matching_rows["text"].iloc[0]
+            # Already processed in this step
+            if image_path in processed:
+                continue
+            # Even/odd split
+            file_name_noext = os.path.splitext(file)[0]
+            if file_name_noext.isdigit():
+                numeric_file_name = int(file_name_noext)
+                if split == "o" and numeric_file_name % 2 == 0:
+                    continue
+                if split == "e" and numeric_file_name % 2 != 0:
+                    continue
+            # Generate description
+            try:
+                if step == 1:
+                    if placeholder not in PLACEHOLDER:
+                        print(f"[WARNING] Unknown usr_type '{placeholder}' for {image_path}", flush=True)
+                        continue
+                    current_prompt = prompt.replace("{placeholder}", str(PLACEHOLDER[placeholder]))
+                    if model == 'gemma':
+                        result = gemma.description(tweet_text,image_path,current_prompt,processor,gemma_model,device,max_tokens)
+                    elif model == 'gpt':
+                        result = gpt.description(tweet_text,image_path,current_prompt,credentials,max_tokens)
+                elif step == 2:
+                    description_step1 = descriptions_step1[(descriptions_step1['Dir']==root)&(descriptions_step1['ImageID']==file)]['Labels'].iloc[0]
+                    if model == 'gemma':
+                        result = gemma.narrative(description_step1,prompt,processor,gemma_model,device,max_tokens)
+                    elif model == 'gpt':
+                        result = gpt.narrative(description_step1,prompt,credentials,max_tokens)
+                else:
+                    raise ValueError(f"Unknown step: {step}. Choose 1 or 2")
+                if result is None:
+                    print("[WARNING] Could not process:", image_path)
+                    continue
+                outfile_handle.write(root + "\t" + file + "\t" + result + "\n")
+                outfile_handle.flush()
+                count += 1
+                if count % 100 == 0:
+                    print(f"Step {step}: {count} images processed",flush=True)
+            except Exception as err:
+                print(f"[WARNING] Could not process {image_path}: {err}",flush=True)
+    outfile_handle.close()
+    print(f"Step {step} complete: {count} images processed")
+
+
+# def llava(image_path, model, processor, prompt, max_tokens):
+#     image = Image.open(image_path).convert("RGB")
+
+#     conversation = [
+#         {
+#             "role": "user",
+#             "content": [
+#                 {"type": "image"},
+#                 {
+#                     "type": "text",
+#                     "text": prompt
+#                 }
+#             ],
+#         }
+#     ]
+
+#     prompt = processor.apply_chat_template(
+#         conversation,
+#         add_generation_prompt=True,
+#         tokenize=False
+#     )
+
+#     inputs = processor(
+#         images=image,
+#         text=prompt,
+#         return_tensors="pt"
+#     )
+
+#     inputs = {
+#         key: value.to(model.device) if torch.is_tensor(value) else value
+#         for key, value in inputs.items()
+#     }
+
+#     generate_ids = model.generate(
+#         **inputs,
+#         max_new_tokens=max_tokens,
+#         do_sample=False
+#     )
+
+#     input_length = inputs["input_ids"].shape[1]
+#     generated_ids = generate_ids[:, input_length:]
+
+#     result = processor.batch_decode(
+#         generated_ids,
+#         skip_special_tokens=True
+#     )[0].strip()
+
+#     return result

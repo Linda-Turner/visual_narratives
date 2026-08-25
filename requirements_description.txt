@@ -1,0 +1,8 @@
+torch
+pandas
+transformers
+filetype
+tqdm
+requests
+pillow
+torchvision

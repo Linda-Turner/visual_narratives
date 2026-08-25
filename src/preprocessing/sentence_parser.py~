@@ -221,7 +221,7 @@ def split_all_cc(tree):
         List[Tree]: A list of split trees
     """
 
-    def find_coordination(sub_tree, path=(), parent=None):
+    def find_coordination(sub_tree, path=()):
         """
         Recursively find a CC to split the sentence on.
 
@@ -247,23 +247,16 @@ def split_all_cc(tree):
             # Only interested in CC
             if not (isinstance(child, Tree) and child.label() == "CC"):
                 continue
-            # Don't split 'between A and B' structure
-            if ((isinstance(parent[0], Tree)) and 
-                (parent is not None) and 
-                (parent.label() == "PP") and 
-                (parent[0].label() == "IN") and 
-                (parent[0][0].lower() == "between")):
-                continue
             # Everything in the sentence left or right from the CC
-            left_conjunct = children[i - 1]
-            right_conjunct = children[i + 1]
-            if isinstance(left_conjunct, Tree) and isinstance(right_conjunct, Tree):
+            left = children[i - 1]
+            right = children[i + 1]
+            if isinstance(left, Tree) and isinstance(right, Tree):
                 return path, i
 
         # Search all childeren recursively for CC
         for i, child in enumerate(children):
             if isinstance(child, Tree):
-                found_CC = find_coordination(child,path + (i,), sub_tree)
+                found_CC = find_coordination(child,path + (i,))
                 if found_CC is not None:
                     path, cc_i = found_CC
                     return path, cc_i

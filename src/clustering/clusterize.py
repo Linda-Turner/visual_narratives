@@ -8,10 +8,7 @@ from sklearn.decomposition import PCA
 from sklearn.cluster import AgglomerativeClustering
 from tqdm import tqdm
 
-from .embeddings import Embeddings
-
-EMBEDDING_MODEL = Embeddings(normalize=True)          
-PCA_ARGS = {'n_components': 50, 'svd_solver': 'full'}
+from .config import PCA_ARGS, EMBEDDING_MODEL, BATCH_SIZE
 
 def prepare_df_to_clustering(
         df: pd.DataFrame, 
@@ -70,7 +67,7 @@ def prepare_df_to_clustering(
 def cluster_and_write(
         input_path: str, 
         output_dir: str, 
-        batch_size: int = 15000, 
+        batch_size: int = BATCH_SIZE, 
         pca_args: dict = PCA_ARGS
     ) -> None:
     """

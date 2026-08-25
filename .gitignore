@@ -1,5 +1,6 @@
 __pycache__/
 src/temp/
+src/trash/
 src/lib/
 notebooks/
 .DS_Store

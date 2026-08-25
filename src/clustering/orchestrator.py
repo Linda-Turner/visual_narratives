@@ -8,13 +8,13 @@ from .clusterize import (
     cluster_and_write
     
 )
-from .clusterize import PCA_ARGS
+from .config import PCA_ARGS, BATCH_SIZE
 
 def cluster_verb_and_noun_phrases(
         df: pd.DataFrame, 
         output_dir: str, 
         pca_args: dict = PCA_ARGS,
-        batch_size=15000
+        batch_size: int = BATCH_SIZE
     ) -> None:
     '''
     Cluster verbs and noun phrases from parsed sentences in the Pandas DataFrame and save the result to seperate CSV files. 

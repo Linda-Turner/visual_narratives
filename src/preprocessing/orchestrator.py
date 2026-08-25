@@ -5,7 +5,7 @@ import pandas as pd
 from preprocessing.coref_resolution import resolve_coreferences
 from preprocessing.sentence_splitter import SentenceSplitter
 from preprocessing.sentence_parser import SentenceParser
-from preprocessing.config import SPACY_MODEL, BENEPAR_MODEL
+from preprocessing.config import SPACY_MODEL, BENEPAR_MODEL, COREF_BATCH_SIZE, PARSER_BATCH_SIZE, SPLIITER_BATCH_SIZE
 
 def filter_descriptions(df : pd.DataFrame) -> pd.DataFrame:
     """
@@ -34,10 +34,10 @@ def filter_descriptions(df : pd.DataFrame) -> pd.DataFrame:
 def preprocess_sentences(
         input_path: str, 
         output_dir: str, 
-        n_process: int=1, 
-        coref_batch_size: int=64, 
-        splitter_batch_size: int=1000, 
-        parser_batch_size: int=1000, 
+        n_process: int, 
+        coref_batch_size: int=COREF_BATCH_SIZE, 
+        splitter_batch_size: int=SPLIITER_BATCH_SIZE, 
+        parser_batch_size: int=PARSER_BATCH_SIZE, 
         spacy_model: str=SPACY_MODEL, 
         benepar_model: str= BENEPAR_MODEL
     ) -> None:
@@ -76,14 +76,14 @@ def preprocess_sentences(
     df = resolve_coreferences(df, n_process=n_process, batch_size=coref_batch_size, spacy_model=spacy_model)
 
     # 3. 
-    output_path_sentences = os.path.join(output_dir,'sentences.csv')
+    output_path_sentences = os.path.join(output_dir,'description_sentences.csv')
     splitter.split_into_sentences(
         df,
         output_path=output_path_sentences
     )
 
     # 4. 
-    output_path_parsed = os.path.join(output_dir ,'parsed_sentences.csv')
+    output_path_parsed = os.path.join(output_dir ,'description_parsed_sentences.csv')
     parser.parse_sentences(
         pd.read_csv(output_path_sentences),
         output_path=output_path_parsed

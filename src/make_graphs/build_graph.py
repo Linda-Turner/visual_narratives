@@ -9,7 +9,6 @@ import pandas as pd
 from .draw_graph import draw_graph
 from .utils import save_graph_to_json
 
-
 NOT_NODE_LABELS = (
     'WHNP', 'TO', 'WHADVP', 'CC', 'RP', 'PRT', 'IN', 'RB', 'MD', 'DT'
 )
@@ -21,7 +20,6 @@ NODES_TO_EXCLUDE = {
     'less', 'co', "A man", "Despite", 'she', 'her', 'they', 'them', 'he', 
     'him', 'his', 'its', 'it'
 }
-
 
 def create_graph(
         df: pd.DataFrame, 

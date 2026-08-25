@@ -65,6 +65,7 @@ class SentenceSplitter:
 
         print(f"\n{'='*60}")
         print("Splitting into sentences...")
+        print(n_process)
 
         # write to csv in order not to overload the memory
         if output_path is None:

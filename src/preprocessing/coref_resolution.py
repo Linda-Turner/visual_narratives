@@ -3,12 +3,12 @@ from tqdm import tqdm
 import pandas as pd
 
 from spacy.cli import download as spacy_download
-from preprocessing.config import SPACY_MODEL, BENEPAR_MODEL
+from preprocessing.config import SPACY_MODEL, COREF_BATCH_SIZE
 
 def resolve_coreferences(
         df: pd.DataFrame, 
-        n_process: int = 1, 
-        batch_size: int = 64, 
+        n_process: int, 
+        batch_size: int = COREF_BATCH_SIZE, 
         spacy_model: str = SPACY_MODEL
     ) -> pd.DataFrame:
     """

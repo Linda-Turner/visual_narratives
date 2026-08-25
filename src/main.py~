@@ -4,6 +4,7 @@ import os
 
 import pandas as pd
 
+
 def describe_images(
         input_file: str, output_dir: str, 
         model : str, 
@@ -36,7 +37,6 @@ def describe_images(
         os.makedirs(data_output_dir)
 
     # Describe images
-    print("READY")
     df = pd.read_csv(input_file, sep="\t")
     image_dir = os.path.commonpath(df["path"].tolist())
     description_step1_file = os.path.join(data_output_dir,'descriptions_step1.tsv')
@@ -126,7 +126,7 @@ def parse_args():
     parser = argparse.ArgumentParser(
         description="Generate visual narratives from an input TSV file.")
     parser.add_argument("--stage",
-        choices=["description", "narrative"],
+        choices=["descriptions", "narrative"],
         required=True,
         help="Pipeline stage to run: 'descriptions' to generate image descriptions, "
             "or 'narrative' to build visual narratives."
@@ -174,21 +174,17 @@ def parse_args():
         default=None)
     parser.add_argument("-n", "--n_processes",
         help= "Number of processes to use in nlp.pipe() for parallel computing. Defaults to 1. " \
-           "Set to -1 to use all cores on the machine.",
-        default=1,
-        type=int)
-        
-    args =  parser.parse_args()
-    if args.stage == "narrative" and args.description_input_file is None:
-        parser.error("--description_input_file is required when --stage is 'narrative'")
-    if args.model  == "gpt" and args.credentials is None:
-        parser.error("--credentials is required when --model is 'gpt'")
-    return args
+                "Set to -1 to use all cores on the machine.",
+                        default=1,
+                        type=int)
+    return parser.parse_args()
 
 
 if __name__ == "__main__":
     args = parse_args()
-    if args.stage=='description':
+    if args.stage == "narrative" and args.description_input_file is None:
+        parser.error("--description_input_file is required when --stage is 'narrative'")
+    if args.stage=='descriptions':
         from generate_description.orchestrator import two_step_descriptions
         describe_images(args.input_file, args.output_dir, args.model, args.prompt1, args.prompt2, args.credentials, args.max_tokens, args.limit, args.split)
     elif args.stage=='narrative':

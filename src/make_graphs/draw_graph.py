@@ -26,7 +26,6 @@ MAX_FONT_SIZE = 30
 MIN_EDGE_WIDTH = 1
 MAX_EDGE_WIDTH = 20  
 
-
 ARROWS_PARAM = {
     'enabled': True,
     'scaleFactor': 0.5 
