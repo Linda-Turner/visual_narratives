@@ -13,3 +13,5 @@ src/clustering/clustering_tests.py
 .venv
 /output_narratives/*
 /data/*
+*~
+.#*
