@@ -14,31 +14,45 @@ The pipeline consists of two stages:
 The two stages require separate environments because they use different versions of `transformers`.
 
 **1. Create different conda environments for description generation and narrative extraction**
+
 Steps for both environments should be run separately
 
 **1.1 Create the conda environments with Python 3.12**
+
 conda create -n visnarr_descriptions python=3.12 -y
+
 or
+
 conda create -n visnarr_narratives python=3.12 -y
 
 **1.2 Activate it**
+
 conda activate visnarr_descriptions
+
 or
+
 conda activate visnarr_narratives
 
 **1.3 Install all packages with pip in the same env**
+
 python -m pip install -r requirements_descriptions.txt
+
 or
+
 python -m pip install -r requirements_narratives.txt
 
 **1.4 Install spacy model**
+
 python -m spacy download en_core_web_sm
 
 **2. Run code**
+
 Depending on the stage different arguments should be passed.
 
 **2.1 Description generation**
+
 conda activate visnarr_descriptions
+
 python main.py --stage description --input_file <input_file> --output-dir <output_directory> 
 
 | Argument              | Description                                                    | Default             |
@@ -55,7 +69,9 @@ python main.py --stage description --input_file <input_file> --output-dir <outpu
 | `-s`, `--split`       | Process only odd (`o`) or even (`e`) numbered files.           | `none`              |
 
 **2.2 Narrative extraction**
+
 conda activate visnarr_narratives
+
 python main.py --stage narrative --input_file <input_file> --description_input_file <descriptions_input_file> --output-dir <output_directory>
 
 | Argument                          | Description                                                                                                                    | Default             |
