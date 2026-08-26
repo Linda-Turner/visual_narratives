@@ -24,8 +24,7 @@ class Embeddings():
     def __init__(self, normalize: bool = True) -> None:
         """        
         Args:
-            normalize (bool): If True, normalize embedding vectors to unit length.
-                Defaults to True.
+            normalize (bool): If True, normalize embedding vectors to unit length. Defaults to True.
         """
         self._model = SentenceTransformer('all-MiniLM-L6-v2')
         self._normalize = normalize
@@ -82,11 +81,8 @@ class Embeddings():
         Generate embedding vectors for multiple phrases.
 
         Args:
-            phrases (Iterable[str]): Collection of text phrases to convert into
-                embedding vectors.
-            progress_bar (bool): Whether to display a tqdm progress bar while
-                generating embeddings.
-                Defaults to True.
+            phrases (Iterable[str]): Collection of text phrases to convert into embedding vectors.
+            progress_bar (bool): Whether to display a tqdm progress bar while generating embeddings. Defaults to True.
 
         Returns:
             np.ndarray: Array of embedding vectors with shape (number_of_phrases, embedding_dimension).

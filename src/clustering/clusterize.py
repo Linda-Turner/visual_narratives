@@ -113,7 +113,7 @@ def cluster_and_write(
 
     df = pd.read_csv(batch_clusters_path, converters={'phrases': ast.literal_eval})
     label2phrases = {row.label: row.phrases for row in df.itertuples(index=False)}
-
+    # Second level of clustering 
     tqdm.write(f'Second level clustering on batches ...')
     clusters = embed_and_cluster(df['label'].tolist(), pca_args) 
     with open(clusters_path, 'w', encoding='utf-8') as f:
@@ -173,10 +173,8 @@ def embed_and_cluster(
     
     Args:
         phrases (list[str]): List of text strings to embed and cluster.
-        pca_args (dict): Dictionary of PCA parameters. Defaults to 50 components
-            with 'full' SVD solver.
-        threshold (float): Cosine similarity threshold for clustering (0-1).
-            Higher values create tighter clusters. Defaults to 0.7.
+        pca_args (dict): Dictionary of PCA parameters. Defaults to 50 components with 'full' SVD solver.
+        threshold (float): Cosine similarity threshold for clustering (0-1). Higher values create tighter clusters. Defaults to 0.7.
     
     Returns:
         list[list[int]]: a list of clusters where each cluster is a list of phrase indices.

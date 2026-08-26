@@ -248,8 +248,8 @@ def split_all_cc(tree):
             if not (isinstance(child, Tree) and child.label() == "CC"):
                 continue
             # Don't split 'between A and B' structure
-            if ((isinstance(parent[0], Tree)) and 
-                (parent is not None) and 
+            if ((parent is not None) and 
+                (isinstance(parent[0], Tree)) and 
                 (parent.label() == "PP") and 
                 (parent[0].label() == "IN") and 
                 (parent[0][0].lower() == "between")):

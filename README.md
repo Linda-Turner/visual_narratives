@@ -1,8 +1,8 @@
 ### Extracting narratives from visual data
 <img width="618" height="568" alt="traveling_narr_cop_m" src="https://github.com/user-attachments/assets/00ff0540-9f61-4272-a419-746f8ecf756c" />
 
-This repo contains all the code used for interpreting images and extracting narratives. 
-The main logic is invoked by the 'main.py' script.
+This repo contains all the code used for interpreting images with corresponding text and extracting narratives. 
+The main logic is invoked by the 'main.py' script. 
 
 
 ### Usage
@@ -53,7 +53,7 @@ Depending on the stage different arguments should be passed.
 
 conda activate visnarr_descriptions
 
-python main.py --stage description --input_file <input_file> --output-dir <output_directory> 
+python src/main.py --stage description --input_file <input_file>
 
 | Argument              | Description                                                    | Default             |
 | --------------------- | -------------------------------------------------------------- | ------------------- |
@@ -72,17 +72,23 @@ python main.py --stage description --input_file <input_file> --output-dir <outpu
 
 conda activate visnarr_narratives
 
-python main.py --stage narrative --input_file <input_file> --description_input_file <descriptions_input_file> --output-dir <output_directory>
+python src/main.py --stage narrative --input_file <input_file> --description_input_file <descriptions_input_file>
 
 | Argument                          | Description                                                                                                                    | Default             |
 | --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ | ------------------- |
 | `--stage`                         | Pipeline stage. Use `narrative` for this stage.                                                                                | Required            |
 | `-i`, `--input_file`              | Original input TSV containing `path`, `event`, and `usr_type`.                                                                 | Required            |
-| `-di`, `--description_input_file` | TSV containing `Dir`, `ImageID`, and `Labels`.                                                                                 | `None`              |
+| `-di`, `--description_input_file` | TSV containing `Dir`, `ImageID`, and `Labels`.                                                                                 | Required            |
 | `-o`, `--output-dir`              | Directory where generated files are saved.                                                                                     | `output_narratives` |
 | `-n`, `--n_processes`             | Number of processes used by spaCy's `nlp.pipe()`.                                                                              | `1`                 |
 |                                   | Use `1` for single-process execution or `-1` to use all available CPU cores.                                                   |                     |    
 
+
+For both stages, additional alterations can be made in the config.py files.
+
+If the code is run with the example data, narrative graphs are created for two global events: the Global Week for Future Climate Strikes, and the yearly United Nations Framework Convention on Climate Change COP conference. These global events are framed through different users: the movement and the countermovement.
+
+The user can use the created graphs to generate ego-graphs. 
 
 ### Input data
 The input data is provided as a .tsv file.
@@ -91,7 +97,7 @@ The <input_file> must contain at least the following columns:
 
 | Column     | Description                                                                               |
 | ---------- | ----------------------------------------------------------------------------------------- |
-| `path`     | Path to the image file                                                                    |
+| `path`     | Path to the image file from the associated directory                                      |
 | `text`     | Text associated with the image                                                            |
 | `event`    | Specific issue or event in happening around a topic (here climate strike and conference)  |
 | `usr_type` | Type of user who posted the image (here movement and countermovement)                     |

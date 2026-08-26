@@ -12,12 +12,14 @@ def describe_images(
         max_tokens: int, limit: int, split: str 
     ): 
     ''' 
-    Generate image descriptions in two steps using a vision-language model. 
+    Generate image descriptions in two steps using a VLLM. 
+    1. Interpret the image and corresponding tweet text. Based on the prompted role of the LLM.
+    2. Rephrase the original answer in simple syntactic structure.  
     
     Args: 
         input_file (str): Path to the input .tsv file. The file must contain the columns 'path', 'text', 'event', and 'usr_type'.  
                         'path' contains the path to the image. 
-                        'text' contains the text associated with the image. 
+                        'text' contains the tweet corrsponding with the image. 
                         'event' identifies the event or movement associated with the post. 
                         'usr_type' identifies the type of user who posted the image. 
         output_dir (str): Directory where the generated descriptions and intermediate files will be saved. 
@@ -36,7 +38,6 @@ def describe_images(
         os.makedirs(data_output_dir)
 
     # Describe images
-    print("READY")
     df = pd.read_csv(input_file, sep="\t")
     image_dir = os.path.commonpath(df["path"].tolist())
     description_step1_file = os.path.join(data_output_dir,'descriptions_step1.tsv')
@@ -57,7 +58,7 @@ def build_visual_narratives(
     ):
     ''' 
         Build visual narratives from generated image descriptions. 
-        The pipeline preprocesses the image descriptions, performs syntactic parsing, clusters verb and noun phrases, 
+        The pipeline preprocesses the image descriptions, clusters verb and noun phrases, 
         merges the processed descriptions with the original input data, and creates and saves narrative graphs. 
         
         Args: 
@@ -86,7 +87,7 @@ def build_visual_narratives(
     if not os.path.exists(graphs_output_dir):
         os.makedirs(graphs_output_dir)
     
-    # Preprocess image descriptions
+    # # Preprocess image descriptions
     preprocessed_sentences_path = preprocess_sentences(description_input_file, data_output_dir, n_processes)
     preprocessed_df = pd.read_csv(
         preprocessed_sentences_path,
@@ -96,15 +97,12 @@ def build_visual_narratives(
         }
     )
 
-    # Clustering words in image descriptions
+    # # Clustering words in image descriptions
     cluster_verb_and_noun_phrases(preprocessed_df, clustering_output_dir)
 
-    # Update image descriptions with cluster labels and merge with data 
+    # # Update image descriptions with cluster labels and merge with data 
     updated_roles_df = update_sentences_with_clusterized(preprocessed_df, clustering_output_dir)
-    updated_roles_df['path'] = (updated_roles_df['Dir'].astype(str)
-    + os.sep
-    + updated_roles_df['ImageID'].astype(str))
-    #updated_roles_df['path'] = os.path.join(updated_roles_df['Dir'].astype(str), updated_roles_df['ImageID'].astype(str))
+    updated_roles_df['path'] = (updated_roles_df['Dir'].astype(str) + "/" + updated_roles_df['ImageID'].astype(str))
     original_data = pd.read_csv(input_file, sep='\t')
     merged_df = updated_roles_df.merge(original_data, on="path", how="inner")
     merged_df.to_csv(os.path.join(data_output_dir, 'processed_data.csv'), index=False)
@@ -133,8 +131,7 @@ def parse_args():
     )
 
     parser.add_argument("-i", "--input_file",
-        help="Path to the input TSV file containing at least the columns 'event', 'usr_type', and 'path', describing the images to classify." \
-            "'path' contains the directory path to the images to classify", 
+        help="Path to the input TSV file containing at least the columns 'event', 'usr_type', and 'path', describing the images to classify.",
         required=True)
     parser.add_argument("-o", "--output-dir",
         help="Directory where generated files will be saved.",
