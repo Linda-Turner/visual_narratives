@@ -19,21 +19,21 @@ Steps for both environments should be run separately
 
 **1.1 Create the conda environments with Python 3.12**
 
-conda create -n visnarr_descriptions python=3.12 -y
+python3.12 -m venv .visnarr_descriptions
 
 or
 
-conda create -n visnarr_narratives python=3.12 -y
+python3.12 -m venv .visnarr_narratives
 
 **1.2 Activate it**
 
-conda activate visnarr_descriptions
+source .visnarr_descriptions/bin/activate
 
 or
 
-conda activate visnarr_narratives
+source .visnarr_narratives/bin/activate
 
-**1.3 Install all packages with pip in the same env**
+**1.3 Install all packages with pip in the same venv**
 
 python -m pip install -r requirements_descriptions.txt
 
